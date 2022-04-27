@@ -1,0 +1,156 @@
+.map{
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content{
+  max-height: 100vh;
+}
+
+.leftBar{
+  position: fixed;
+  left: 0;
+  z-index: 100;
+  margin: 0;
+  padding: 0;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 30em;
+  transition: left .25s;
+  max-width: 100vw;
+  &.hidden{
+    left: -30em;
+  }
+  .expandHide{
+    display: flex;
+    justify-content: space-between;
+    > div{
+      flex-direction: row;
+      display: flex;
+      align-items: center;
+       > input{
+        width: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 0;
+        aspect-ratio: 1 / 1;
+        border-radius: 2em;
+        background-color: var(--bg-sec-color);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 2px 1px var(--bg-sec-color);
+        color: #fff;
+        margin-left: .5em;
+        }
+    }
+  }
+  > ul{
+    padding: 0;
+  }
+  .vehicleDetails{
+    > div{
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      > div{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
+      > div > span{
+        cursor: pointer;
+        // color: #f00;
+        background-color: var(--bg-sec-color);
+        backdrop-filter: blur(10px);
+        display: flex;
+        aspect-ratio: 1 / 1;
+        width: 1.5em;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 0 2px 1px var(--bg-sec-color);
+      }
+      h2{
+        margin: 0;
+      }
+    }
+    > ul{
+      list-style: none;
+      padding-left: initial;
+    }
+    display: flex;
+    flex-direction: column;
+  }
+  .leftBarCard{
+    background-color: var(--bg-sec-color);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 2px 1px var(--bg-sec-color);
+    margin: 1em;
+    color: #fff;
+    border-radius: .5em;
+    list-style: none;
+    padding: 1em;
+    display: flex;
+    height: max-content;
+  }
+  .vehiclesWithBasicDetails{
+    overflow: auto;
+  }
+  .vehicleCard{
+    cursor: pointer;
+    max-height: 150px;
+    align-items: center;
+    overflow: hidden;
+    span{
+      writing-mode: vertical-rl;
+      text-align: center;
+      transform: rotate(180deg);
+      font-variant-caps: all-petite-caps;
+      font-weight: bold;
+      font-family: sans-serif;
+      height: 3em;
+      font-size: 1.1em;
+      border-radius: .2em;
+
+    }
+    ul{
+      padding: 0;
+      list-style: none;
+      width: fit-content;
+    }
+    h1{
+      width: 2.5em;
+      line-height: 0;
+      padding: .2em;
+      margin: 0;
+      text-align: center;
+    }
+  }
+  form{
+    flex-direction: column;
+    text-align: center;
+    h1{
+      margin: 0;
+    }
+    input, select{
+      backdrop-filter: blur(10px);
+      background-color: #0005;
+      color: var(--txt-color);
+      font-family: inherit;
+      margin-top: .5em;
+      outline: 0;
+      border-radius: .2em;
+      border: 0;
+      padding: .2em;
+      box-shadow: 0 0 5px #0005;
+    }
+  }
+  > div{
+    margin: 0;
+  }
+}
