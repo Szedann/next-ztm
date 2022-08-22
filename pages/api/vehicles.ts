@@ -60,7 +60,7 @@ const refreshAllVehiclesBasicDetails = async ()=>{
         const data = await (await fetch(`https://www.ztm.waw.pl/en/vehicle-database/page/${page}/?ztm_traction=1?`)).text()
         const dom = new JSDOM(data)
         await getVehiclesBasicDetailsFromDOM(dom, vehiclesBasicDetails,'bus')
-        sleep(100)//try to avoid 429 error
+        // sleep(100)//try to avoid 429 error
     }
     
     const tramData = await (await fetch('https://www.ztm.waw.pl/en/vehicle-database/?ztm_traction=4')).text()
