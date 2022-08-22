@@ -7,21 +7,24 @@ type Data = Vehicle[]
 const vehicles:Vehicle[] = []
 
 const transformFromApi = (data:any[],targetArray:Vehicle[], type:'tram'|'bus') => {
-  if(data[0].Lines){
-    const tempArray = targetArray.filter(v=>v.type!=type)
-    targetArray.splice(0,targetArray.length)
-    targetArray.push(...tempArray)
-    for(const vehicle of data){
-      targetArray.push({
-        line: vehicle.Lines as string,
-        geo: [vehicle.Lon as number, vehicle.Lat as number],
-        vehicleNumbers: (vehicle.VehicleNumber as string).split("+"),
-        brigade: vehicle.Brigade as string,
-        time: new Date(vehicle.Time),
-        type
-      })
-    }
+  if(!data[0].Lines) return
+  const tempArray = targetArray.filter(v=>v.type!=type)
+  const oldArray = targetArray.slice()
+  targetArray.splice(0,targetArray.length)
+  targetArray.push(...tempArray)
+  for(const vehicle of data){
+    const oldVehicle = oldArray.find(v=>v.id==(vehicle.VehicleNumber as string).split("+")&&v.type==type)
+    targetArray.push({
+      line: vehicle.Lines as string,
+      geo: [vehicle.Lon as number, vehicle.Lat as number],
+      id: (vehicle.VehicleNumber as string).split("+"),
+      brigade: vehicle.Brigade as string,
+      time: new Date(vehicle.Time),
+      type,
+      movement: oldVehicle ? [(vehicle.Lon as number)-oldVehicle?.geo[0],(vehicle.Lon as number)-oldVehicle?.geo[1]]: undefined
+    })
   }
+  
 }
 
 const refreshData = async ()=>{
@@ -41,17 +44,16 @@ const refreshData = async ()=>{
   
   transformFromApi(busData, vehicles, 'bus')
   transformFromApi(tramData, vehicles, 'tram')
-  // console.log(vehicles.find(v=>v.type=='bus'), vehicles.find(v=>v.type=='tram'))
 }
 
 refreshData()
 
-setInterval(refreshData,30000)
+setInterval(refreshData,10000)
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   const time = new Date()
-  res.status(200).json(vehicles.filter((v,i)=>vehicles.findIndex(a=>a.vehicleNumbers==v.vehicleNumbers&&a.type==v.type)==i).filter(v=>v.time.valueOf()>time.valueOf()-60000))
+  res.status(200).json(vehicles.filter((v,i)=>vehicles.findIndex(a=>a.id==v.id&&a.type==v.type)==i).filter(v=>v.time.valueOf()>time.valueOf()-60000))
 }

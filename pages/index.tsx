@@ -3,11 +3,10 @@ import Head from 'next/head'
 import styles from '../styles/Home.module.scss'
 import Map, { Layer, LayerProps, MapRef, Source } from 'react-map-gl';
 import { useEffect, useRef, useState } from 'react';
-import { Vehicle } from '../types';
-import { VehicleBasicDetails } from './api/vehicles';
+import { IVehicle, Vehicle } from '../types';
 import mapboxgl, { MapLayerMouseEvent } from 'mapbox-gl';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import { VehicleDetails } from './api/vehicleDetails';
+
 
 export const getStaticProps:GetStaticProps = async (context) => {
   const mapboxAccessToken = process.env.MAPBOX_ACCESS_TOKEN
@@ -62,15 +61,15 @@ const tramLayerStyle:LayerProps = {
   }
 }
 
-const VehicleBasicDetails = ({basicInfo, currentInfo, selectVehicle, selected}:{
-  basicInfo:VehicleBasicDetails,
+const VehicleBasicDetails = ({basicInfo, currentInfo, id, selected}:{
+  basicInfo:IVehicle,
   currentInfo:Vehicle,
-  selectVehicle:({type,vehicleNumber}:{type:'bus'|'tram',vehicleNumber:string})=>any,
+  id:({type,id}:{type:'bus'|'tram',id:string})=>any,
   selected:boolean
   })=>{
   return <li
   className={styles.leftBarCard+' '+styles.vehicleCard}
-  onClick={()=>{selectVehicle({type:basicInfo.type,vehicleNumber:basicInfo.vehicleNumber})}}
+  onClick={()=>{id({type:basicInfo.type,id:basicInfo.id})}}
   style={selected?{boxShadow:`0 0 3px 2px ${basicInfo.type=='bus'?'#909':'#f00'}, inset 0 0 3px 2px ${basicInfo.type=='bus'?'#909':'#f00'}`}:undefined}
   >
     <span style={{
@@ -78,33 +77,33 @@ const VehicleBasicDetails = ({basicInfo, currentInfo, selectVehicle, selected}:{
     }}>{basicInfo.type}</span>
     <h1>{currentInfo.line}</h1>
     <ul>
-      <li>model: {basicInfo.make} {basicInfo.model}</li>
-      <li>vehicle number: {currentInfo.vehicleNumbers.join('+')}</li>
+      <li>model: {basicInfo.brand} {basicInfo.model}</li>
+      <li>vehicle number: {currentInfo.id.join('+')}</li>
       <li>depot: {basicInfo.depot}</li>  
       <li>carrier: {basicInfo.carrier}</li>  
     </ul>
   </li>
 }
 
-const getBasicDetails = async (limit:number, offset:number, ids:string[], options?:Partial<VehicleBasicDetails>) => {
+const getBasicDetails = async (limit:number, offset:number, ids:string[], options?:any) => {
   const l = limit.toString()
   const o = offset.toString()
   const idsString = ids.join(',')
   const params = new URLSearchParams({...options, limit: l, offset: o, ids: idsString});
-  const ret = (await (await fetch(`/api/vehicles/?${params}`)).json()) as VehicleBasicDetails[]
+  const ret = (await (await fetch(`/api/vehicles/?${params}`)).json()) as IVehicle[]
   return ret
 }
 
 const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getStaticProps>) => {
-  const [filterInputs, setFilterInputs] = useState({line:'',vehicleNumber:'',make:'',model:'',type:''})
+  const [filterInputs, setFilterInputs] = useState({line:'',vehicleNumber:'',brand:'',model:'',type:''})
   const [vehicles, setVehicles] = useState([] as Vehicle[])
   const [filter, setFilter] = useState({filter:(a:Vehicle)=>true as boolean})
-  const [vehiclesWithBasicDetails, setVehiclesWithBasicDetails] = useState([] as VehicleBasicDetails[])
+  const [vehiclesWithBasicDetails, setVehiclesWithBasicDetails] = useState([] as IVehicle[])
   const [indexes, setIndexes] = useState([] as {id:string,type:'bus'|'tram'}[])
-  const [vehiclesToShowOnLeft, setVehiclesToShowOnLeft] = useState([] as Vehicle[])
+  const [vehiclesToList, setVehiclesToList] = useState([] as Vehicle[])
   const [leftBarVisible, setLeftBarVisible] = useState(true)
-  const [selectedVehicle, selectVehicle] = useState(null as {vehicleNumber:string,type:'bus'|'tram'}|null)
-  const [selectedVehicleDetails, setSelectedVehicleDetails] = useState(null as VehicleDetails|null)
+  const [selectedVehicle, selectVehicle] = useState(null as {id:string,type:'bus'|'tram'}|null)
+  const [selectedVehicleDetails, setSelectedVehicleDetails] = useState(null as IVehicle|null)
   const [detailsExtended, setDetailsExtended] = useState(true)
 
   const mapRef = useRef<MapRef>(null)
@@ -129,7 +128,7 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
       const data = await (await fetch('/api/vehicleDetails?'+params)).json()
       setSelectedVehicleDetails(data)
     })()
-    mapRef.current?.flyTo({center:vehicles.find(v=>v.vehicleNumbers[0]==selectedVehicle.vehicleNumber&&v.type==selectedVehicle.type)?.geo, zoom: 15})
+    mapRef.current?.flyTo({center:vehicles.find(v=>v.id[0]==selectedVehicle.id&&v.type==selectedVehicle.type)?.geo, zoom: 15})
   },[selectedVehicle])
 
   const setFilterInput = (key:string, value:any)=>{
@@ -140,11 +139,11 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
   const applyFilter = ()=>{
     setFilter({filter:
     (a:Vehicle)=>{
-      const details = vehiclesWithBasicDetails.find(v=>v.vehicleNumber==a.vehicleNumbers[0]&&v.type==a.type)
-      if(filterInputs.make && (filterInputs.make.toLowerCase() != details?.make.toLowerCase())) return false
+      const details = vehiclesWithBasicDetails.find(v=>v.id == a.id[0] && v.type == a.type)
+      if(filterInputs.brand && (filterInputs.brand.toLowerCase() != details?.brand.toLowerCase())) return false
       if(filterInputs.model && (filterInputs.model.toLowerCase() != details?.model.toLowerCase())) return false
       if(filterInputs.line && (filterInputs.line.toLowerCase() != a.line.toLowerCase())) return false
-      if(filterInputs.vehicleNumber && (filterInputs.vehicleNumber.toLowerCase() != a.vehicleNumbers[0].toLowerCase())) return false
+      if(filterInputs.vehicleNumber && (filterInputs.vehicleNumber.toLowerCase() != a.id[0].toLowerCase())) return false
       if(filterInputs.type && (filterInputs.type != a.type)) return false
       return true
     }
@@ -161,18 +160,19 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
   }
 
   useEffect(()=>{
-    setVehiclesToShowOnLeft(
+    setVehiclesToList(
       vehicles
-      .filter(v=>indexes.findIndex(i=>(v.vehicleNumbers[0]==i.id)&&(v.type==i.type))!==-1)
+      .filter(filter.filter)
+      .filter(v=>indexes.findIndex(i=>(v.id[0]==i.id)&&(v.type==i.type))!==-1)
       .slice(0,100))
-  },[vehicles,vehiclesWithBasicDetails,indexes, filter])
+  },[vehicles,indexes, filter])
 
   const mapClick=(e:MapLayerMouseEvent)=>{
     if(!e.features) return
     e.features[0].id
     selectVehicle({
       type: e.features[0].layer.id=='buses'?'bus':'tram',
-      vehicleNumber: e.features[0].id as string
+      id: e.features[0].id as string
     })
   }
   const filteredVehicles = vehicles.filter(filter.filter)
@@ -200,9 +200,9 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
             <h2>filter results:</h2>
             <input type="text" value={filterInputs.line} onChange={e=>setFilterInput('line',e.currentTarget.value)} placeholder='line' />
             <input type="text" value={filterInputs.vehicleNumber} onChange={e=>setFilterInput('vehicleNumber',e.currentTarget.value)} placeholder='vehicle number' />
-            <input type="text" value={filterInputs.make} onChange={e=>setFilterInput('make',e.currentTarget.value)} placeholder='producer' />
+            <input type="text" value={filterInputs.brand} onChange={e=>setFilterInput('brand',e.currentTarget.value)} placeholder='producer' />
             <input type="text" value={filterInputs.model} onChange={e=>setFilterInput('model',e.currentTarget.value)} placeholder='model' />
-            <select value={filterInputs.type} onChange={e=>setFilterInput('type',e.currentTarget.value)} placeholder='type'>
+            <select title='Vehicle type' value={filterInputs.type} onChange={e=>setFilterInput('type',e.currentTarget.value)} placeholder='type'>
               <option value="">all</option>
               <option value="bus">bus</option>
               <option value="tram">tram</option>
@@ -213,38 +213,42 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
           <div className={styles.leftBarCard + ' '+ styles.vehicleDetails}>
             {selectedVehicleDetails ? <>
               <div className='topLine'>
-                <h2>{selectedVehicleDetails.year} {selectedVehicleDetails.make} {selectedVehicleDetails.model}</h2>
+                <h2>{selectedVehicleDetails.year} {selectedVehicleDetails.brand} {selectedVehicleDetails.model}</h2>
                 <div>
-                  <span onClick={()=>setDetailsExtended(!detailsExtended)}>{detailsExtended?'▲':'▼'}</span>
+                  <span onClick={()=>setDetailsExtended(!detailsExtended)} className={styles.extendButton} style={detailsExtended?{transform: "rotate(180deg)"}:{transform: "rotate(0)"}}>▼</span>
                   <span onClick={()=>selectVehicle(null)}>x</span>
                 </div>
               </div>
-              {detailsExtended&&<ul>
-                <li>vehicle number: {selectedVehicleDetails.vehicleNumber}</li>
-                <li>registration id: {selectedVehicleDetails.registrationId}</li>
+              <ul style={{height: detailsExtended ? (9+(selectedVehicleDetails.equipment?.length||-1))+"em":"0px"}} className={styles.selectedVehicleDetails}>
+                <li>vehicle number: {selectedVehicleDetails.id}</li>
+                <li>registration id: {selectedVehicleDetails.registrationNumber}</li>
                 <li>carrier: {selectedVehicleDetails.carrier}</li>
                 <li>depot: {selectedVehicleDetails.depot}</li>
                 <li>ticket machine: {selectedVehicleDetails.ticketMachine ? 'available' : 'unavailable'}</li>
-                <li>equipment: <ul>{selectedVehicleDetails.equipment.map(e=><li key={e}>{e}</li>)}</ul></li>
-              </ul>}
-            </>:<span>loading data...</span>}
+                {selectedVehicleDetails.equipment && <li>equipment: <ul>{selectedVehicleDetails.equipment.map(e=><li key={e}>{e}</li>)}</ul></li>}
+              </ul>
+            </>:<h2>loading data...</h2>}
           </div>
           )}
           {(vehicles.length && vehiclesWithBasicDetails.length) ?
           <div className={styles.vehiclesWithBasicDetails} ref={listRef}>
             <TransitionGroup>
               {vehiclesWithBasicDetails
-              .filter(vehicle=>vehiclesToShowOnLeft.findIndex(v=>v.vehicleNumbers[0]==vehicle.vehicleNumber) !== -1)
-              .filter(v=>indexes.findIndex(i=>v.vehicleNumber==i.id&&v.type==i.type)!==-1)
+              .filter(
+                vehicle=>
+                (vehiclesToList.findIndex(v=>v.id[0]==vehicle.id&&v.type==vehicle.type) !== -1)
+                || (selectedVehicle?.type==vehicle.type&&selectedVehicle?.id==vehicle.id)
+              )
+              .sort((a)=>selectedVehicle ?((selectedVehicle?.type==a.type&&selectedVehicle.id==a.id)?-1:1) : 0)
               .slice(0,50)
               .map(
                 vehicle=>
                   {
-                    const currentInfo = vehicles.find(v=>v.vehicleNumbers[0]==vehicle.vehicleNumber&&v.type==vehicle.type)
-                    const selected = selectedVehicle?.type==vehicle.type&&selectedVehicle.vehicleNumber==vehicle.vehicleNumber
+                    const currentInfo = vehicles.find(v=>v.id[0]==vehicle.id&&v.type==vehicle.type)
+                    const selected = selectedVehicle?.type==vehicle.type&&selectedVehicle?.id==vehicle.id
                     if(!currentInfo) return;
                     return (<CSSTransition timeout={250} classNames="vehicleItem" key={JSON.stringify(currentInfo)}>
-                      <VehicleBasicDetails selected={selected} selectVehicle={selectVehicle} currentInfo={currentInfo} basicInfo={vehicle} />
+                      <VehicleBasicDetails selected={selected} id={selectVehicle} currentInfo={currentInfo} basicInfo={vehicle} />
                     </CSSTransition>)
                   }
               )}
@@ -254,6 +258,12 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
           <div className={styles.leftBarCard}>Loading...</div>
           }
         </>}
+      </div>
+      <div className={styles.copyrightBar}>
+        copyright &copy; <a href="https://github.com/Szedann">Szedann</a> | 
+        maps: &copy; <a href="">OpenStreetMap</a>, &copy; <a href="">Mapbox</a> | 
+        live vehicle data: &copy; <a href="http://api.um.warszawa.pl">Miasto Stołeczne Warszawa</a>
+
       </div>
       <div className={styles.map}>
         <Map
@@ -270,9 +280,9 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
             type: 'Feature',
             properties:{
               ...vehicle,
-              color: (selectedVehicle && selectedVehicle.type==vehicle.type && selectedVehicle.vehicleNumber==vehicle.vehicleNumbers[0])?'#980297':"#ffffff"
+              color: (selectedVehicle && selectedVehicle.type==vehicle.type && selectedVehicle.id==vehicle.id[0])?'#980297':"#ffffff"
             },
-            id:vehicle.vehicleNumbers[0]
+            id:vehicle.id[0]
             }}),type:'FeatureCollection'}}>
             <Layer {...busLayerStyle}/>
           </Source>
@@ -281,9 +291,9 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
             type: 'Feature',
             properties:{
               ...vehicle,
-              color: (selectedVehicle && selectedVehicle.type==vehicle.type && selectedVehicle.vehicleNumber==vehicle.vehicleNumbers[0])?'#FD0017':"#ffffff"
+              color: (selectedVehicle && selectedVehicle.type==vehicle.type && selectedVehicle.id==vehicle.id[0])?'#FD0017':"#ffffff"
             },
-            id:vehicle.vehicleNumbers[0]
+            id:vehicle.id[0]
             }}),type:'FeatureCollection'}}>
             <Layer {...tramLayerStyle}/>
           </Source>
