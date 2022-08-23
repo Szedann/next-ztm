@@ -1,6 +1,5 @@
 import mongoose, { Schema, model, models } from "mongoose";
 import { IVehicle } from "../types";
-import { connectDB } from "../utils/connectDB";
 
 const vehicleSchema = new Schema({
     id: {

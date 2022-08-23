@@ -23,7 +23,7 @@ const getVehiclesBasicDetailsFromDOM = async (dom:JSDOM, array:IVehicle[], type:
     for(let i = 0; i<elements.length;i++){
         const element = elements[i]
         const vehicle = {
-            id: (type == "bus" ? "B" : "T") + nthValue(element, 0),
+            id: nthValue(element, 0),
             brand: nthValue(element, 1),
             model: nthValue(element, 2),
             carrier: nthValue(element, 3),

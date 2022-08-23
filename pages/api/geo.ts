@@ -46,7 +46,7 @@ const refreshData = async ()=>{
   transformFromApi(tramData, vehicles, 'tram')
 }
 
-refreshData()
+const promise = refreshData()
 
 setInterval(refreshData,10000)
 
@@ -54,6 +54,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  await promise
   const time = new Date()
   res.status(200).json(vehicles.filter((v,i)=>vehicles.findIndex(a=>a.id==v.id&&a.type==v.type)==i).filter(v=>v.time.valueOf()>time.valueOf()-60000))
 }

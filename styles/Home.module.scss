@@ -17,8 +17,8 @@
   max-height: 100vh;
   display: flex;
   flex-direction: column;
-  width: 30em;
   transition: left .25s;
+  width: 30em;
   max-width: 100vw;
   &.hidden{
     left: -30em;
@@ -43,6 +43,7 @@
         box-shadow: 0 0 2px 1px var(--bg-sec-color);
         color: #fff;
         margin-left: .5em;
+        transition: transform .25s;
         }
     }
   }
@@ -165,13 +166,27 @@
 }
 
 .selectedVehicleDetails{
-  transition: height .25s;
+  transition: height .25s, opacity .25s;
   max-height: min-content;
   overflow: hidden;
   padding: 0;
   margin: 0;
+  line-height: 1.15em;
 }
 
 .extendButton{
   transition: transform .25s;
+}
+
+.leftBarElements{
+  width: 30em;
+  max-width: 100vw;
+  transition: height .5s;
+  overflow-x: hidden;
+  height: 100vh;
+
+}
+
+.hidden{
+  height: 0;
 }

@@ -117,7 +117,7 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
       setVehicles([...newVehicles])
     }
     refreshData()
-    setInterval(refreshData,10000)
+    setInterval(refreshData,30000)
   },[])
 
   useEffect(()=>{
@@ -127,6 +127,7 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
       const params = new URLSearchParams(selectedVehicle).toString();
       const data = await (await fetch('/api/vehicleDetails?'+params)).json()
       setSelectedVehicleDetails(data)
+      setDetailsExtended(true)
     })()
     mapRef.current?.flyTo({center:vehicles.find(v=>v.id[0]==selectedVehicle.id&&v.type==selectedVehicle.type)?.geo, zoom: 15})
   },[selectedVehicle])
@@ -192,10 +193,10 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
           </h2>
           <div>
             {leftBarVisible ? 'hide results' : 'show results'}
-            <input type="button" value={leftBarVisible?'←':'→'} onClick={()=>setLeftBarVisible(!leftBarVisible)} />
+            <input type="button" style={leftBarVisible?{transform: "rotate(180deg)"}:{transform: "rotate(0)"}} value="▼" onClick={()=>setLeftBarVisible(!leftBarVisible)} />
           </div>
         </div>
-        {leftBarVisible && <>
+        {<div className={`${styles.leftBarElements} ${!leftBarVisible && styles.hidden}`}>
           <form className={styles.leftBarCard}>
             <h2>filter results:</h2>
             <input type="text" value={filterInputs.line} onChange={e=>setFilterInput('line',e.currentTarget.value)} placeholder='line' />
@@ -211,23 +212,24 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
           </form>
           {selectedVehicle&&(
           <div className={styles.leftBarCard + ' '+ styles.vehicleDetails}>
-            {selectedVehicleDetails ? <>
-              <div className='topLine'>
-                <h2>{selectedVehicleDetails.year} {selectedVehicleDetails.brand} {selectedVehicleDetails.model}</h2>
-                <div>
-                  <span onClick={()=>setDetailsExtended(!detailsExtended)} className={styles.extendButton} style={detailsExtended?{transform: "rotate(180deg)"}:{transform: "rotate(0)"}}>▼</span>
-                  <span onClick={()=>selectVehicle(null)}>x</span>
-                </div>
+            <div className='topLine'>
+              <h2>{selectedVehicleDetails ? <>{selectedVehicleDetails.year} {selectedVehicleDetails.brand} {selectedVehicleDetails.model}</> : "loading..."}</h2>
+              <div>
+                <span onClick={()=>setDetailsExtended(!detailsExtended)} className={styles.extendButton} style={detailsExtended?{transform: "rotate(180deg)"}:{transform: "rotate(0)"}}>▼</span>
+                <span onClick={()=>selectVehicle(null)}>x</span>
               </div>
-              <ul style={{height: detailsExtended ? (9+(selectedVehicleDetails.equipment?.length||-1))+"em":"0px"}} className={styles.selectedVehicleDetails}>
-                <li>vehicle number: {selectedVehicleDetails.id}</li>
-                <li>registration id: {selectedVehicleDetails.registrationNumber}</li>
-                <li>carrier: {selectedVehicleDetails.carrier}</li>
-                <li>depot: {selectedVehicleDetails.depot}</li>
-                <li>ticket machine: {selectedVehicleDetails.ticketMachine ? 'available' : 'unavailable'}</li>
-                {selectedVehicleDetails.equipment && <li>equipment: <ul>{selectedVehicleDetails.equipment.map(e=><li key={e}>{e}</li>)}</ul></li>}
-              </ul>
-            </>:<h2>loading data...</h2>}
+            </div>
+            <ul style={{height: (selectedVehicleDetails && detailsExtended) ? 
+              (((selectedVehicleDetails.equipment?.length||-1)+5
+                +(selectedVehicleDetails.registrationNumber ? 1 : 0))*1.15
+              )+"em":"0px", opacity: selectedVehicleDetails && detailsExtended?1:0}} className={styles.selectedVehicleDetails}>
+                <li>vehicle number: {selectedVehicleDetails?.id}</li>
+                {selectedVehicleDetails?.registrationNumber && <li>registration id: {selectedVehicleDetails?.registrationNumber}</li>}
+                <li>carrier: {selectedVehicleDetails?.carrier}</li>
+                <li>depot: {selectedVehicleDetails?.depot}</li>
+                <li>ticket machine: {selectedVehicleDetails?.ticketMachine ? 'available' : 'unavailable'}</li>
+                {selectedVehicleDetails?.equipment && <li>equipment: <ul>{selectedVehicleDetails.equipment.map(e=><li key={e}>{e}</li>)}</ul></li>}
+            </ul>
           </div>
           )}
           {(vehicles.length && vehiclesWithBasicDetails.length) ?
@@ -257,7 +259,7 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
           :
           <div className={styles.leftBarCard}>Loading...</div>
           }
-        </>}
+        </div>}
       </div>
       <div className={styles.copyrightBar}>
         copyright &copy; <a href="https://github.com/Szedann">Szedann</a> | 
