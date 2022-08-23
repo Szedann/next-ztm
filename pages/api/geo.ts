@@ -48,7 +48,7 @@ const refreshData = async ()=>{
 
 const promise = refreshData()
 
-// setInterval(refreshData,10000)
+setInterval(refreshData,10000)
 
 export default async function handler(
   req: NextApiRequest,
