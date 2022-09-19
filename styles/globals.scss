@@ -64,15 +64,58 @@ a {
 .vehicleItem-enter-active{
   opacity: 1;
   height: 150px;
-  transition: height .25s linear, opacity .25s linear;
+  transition: height .25s, opacity .15s;
+}
+
+.vehicleItem-enter-done{
+  opacity: 1;
+  height: 150px;
 }
 
 .vehicleItem-exit {
   opacity: 1;
   height: 150px;
 }
+
 .vehicleItem-exit-active {
   opacity: 0;
   height: 0;
-  transition: height .25s ease-in, opacity .25s;
+  transition: height .25s, opacity .15s;
+}
+
+
+.selectedVehicle-enter{
+  opacity: 0;
+  height: 0;
+  max-height: fit-content;
+}
+
+.selectedVehicle-enter-active{
+  opacity: 0;
+  max-height: fit-content;
+  height: 3em;
+  transition: height .5s ease-in, opacity .25s;
+}
+
+.selectedVehicle-enter-done{
+  height: fit-content;
+}
+
+.selectedVehicle-exit{
+  max-height: fit-content;
+  height: 600px;
+  opacity: 1;
+}
+
+.selectedVehicle-exit-active{
+  max-height: fit-content;
+  transition: height .5s ease-out, opacity .5s;
+  opacity: 0;
+  height: 0;
+}
+
+
+.selectedVehicle-exit-done{
+  opacity: 0;
+  height: 0;
 }

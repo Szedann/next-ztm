@@ -2,7 +2,7 @@ import type { GetStaticProps, InferGetStaticPropsType, NextPage } from 'next'
 import Head from 'next/head'
 import styles from '../styles/Home.module.scss'
 import Map, { Layer, LayerProps, MapRef, Source } from 'react-map-gl';
-import { useEffect, useRef, useState } from 'react';
+import { KeyboardEventHandler, useEffect, useRef, useState } from 'react';
 import { IVehicle, Vehicle } from '../types';
 import mapboxgl, { MapLayerMouseEvent } from 'mapbox-gl';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
@@ -151,6 +151,10 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
     })
   }
 
+  const onkeyDownFilter:KeyboardEventHandler<HTMLInputElement> = (k)=>{
+    if(k.key == "Enter") applyFilter()
+  }
+
   useEffect(()=>{
     console.log(vehiclesWithBasicDetails)
   },[vehiclesWithBasicDetails])
@@ -189,7 +193,13 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
       <div className={styles.leftBar}>
         <div className={`${styles.leftBarCard} ${styles.expandHide}`}>
           <h2>
-            {filteredVehicles.length || 'no'} vehicle{filteredVehicles.length == 1 || 's'}
+            {leftBarVisible ? 
+              <>{filteredVehicles.length || 'no'} vehicle{filteredVehicles.length == 1 || 's'}</>
+              : <>
+                <input type="text" value={filterInputs.line} onKeyDown={onkeyDownFilter} onChange={e=>setFilterInput('line',e.currentTarget.value)} placeholder='line'/>
+              </>
+            }
+            
           </h2>
           <div>
             {leftBarVisible ? 'hide results' : 'show results'}
@@ -199,10 +209,10 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
         {<div className={`${styles.leftBarElements} ${!leftBarVisible && styles.hidden}`}>
           <form className={styles.leftBarCard}>
             <h2>filter results:</h2>
-            <input type="text" value={filterInputs.line} onChange={e=>setFilterInput('line',e.currentTarget.value)} placeholder='line' />
-            <input type="text" value={filterInputs.vehicleNumber} onChange={e=>setFilterInput('vehicleNumber',e.currentTarget.value)} placeholder='vehicle number' />
-            <input type="text" value={filterInputs.brand} onChange={e=>setFilterInput('brand',e.currentTarget.value)} placeholder='producer' />
-            <input type="text" value={filterInputs.model} onChange={e=>setFilterInput('model',e.currentTarget.value)} placeholder='model' />
+            <input type="text" value={filterInputs.line} onKeyDown={onkeyDownFilter} onChange={e=>setFilterInput('line',e.currentTarget.value)} placeholder='line' />
+            <input type="text" value={filterInputs.vehicleNumber} onKeyDown={onkeyDownFilter} onChange={e=>setFilterInput('vehicleNumber',e.currentTarget.value)} placeholder='vehicle number' />
+            <input type="text" value={filterInputs.brand} onKeyDown={onkeyDownFilter} onChange={e=>setFilterInput('brand',e.currentTarget.value)} placeholder='producer' />
+            <input type="text" value={filterInputs.model} onKeyDown={onkeyDownFilter} onChange={e=>setFilterInput('model',e.currentTarget.value)} placeholder='model' />
             <select title='Vehicle type' value={filterInputs.type} onChange={e=>setFilterInput('type',e.currentTarget.value)} placeholder='type'>
               <option value="">all</option>
               <option value="bus">bus</option>
@@ -210,28 +220,30 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
             </select>
             <input type="button" onClick={applyFilter} value="apply"/>
           </form>
-          {selectedVehicle&&(
-          <div className={styles.leftBarCard + ' '+ styles.vehicleDetails}>
-            <div className='topLine'>
-              <h2>{selectedVehicleDetails ? <>{selectedVehicleDetails.year} {selectedVehicleDetails.brand} {selectedVehicleDetails.model}</> : "loading..."}</h2>
-              <div>
-                <span onClick={()=>setDetailsExtended(!detailsExtended)} className={styles.extendButton} style={detailsExtended?{transform: "rotate(180deg)"}:{transform: "rotate(0)"}}>▼</span>
-                <span onClick={()=>selectVehicle(null)}>x</span>
+          <CSSTransition in={!!selectedVehicle} timeout={500} classNames={"selectedVehicle"}>
+            <div className={`${!selectedVehicle && styles.hidden}`}>
+              <div className={styles.leftBarCard + ' '+ styles.vehicleDetails}>
+                <div className='topLine'>
+                  <h2>{selectedVehicleDetails ? <>{selectedVehicleDetails.year} {selectedVehicleDetails.brand} {selectedVehicleDetails.model}</> : "loading..."}</h2>
+                  <div>
+                    <span onClick={()=>setDetailsExtended(!detailsExtended)} className={styles.extendButton} style={detailsExtended?{transform: "rotate(180deg)"}:{transform: "rotate(0)"}}>▼</span>
+                    <span onClick={()=>selectVehicle(null)}>x</span>
+                  </div>
+                </div>
+                <ul style={{height: (selectedVehicleDetails && detailsExtended) ?
+                  (((selectedVehicleDetails.equipment?.length||-1)+5
+                    +(selectedVehicleDetails.registrationNumber ? 1 : 0))*1.15
+                  )+"em":"0px", opacity: selectedVehicleDetails && detailsExtended?1:0}} className={styles.selectedVehicleDetails}>
+                    <li>vehicle number: {selectedVehicleDetails?.id}</li>
+                    {selectedVehicleDetails?.registrationNumber && <li>registration id: {selectedVehicleDetails?.registrationNumber}</li>}
+                    <li>carrier: {selectedVehicleDetails?.carrier}</li>
+                    <li>depot: {selectedVehicleDetails?.depot}</li>
+                    <li>ticket machine: {selectedVehicleDetails?.ticketMachine ? 'available' : 'unavailable'}</li>
+                    {selectedVehicleDetails?.equipment && <li>equipment: <ul>{selectedVehicleDetails.equipment.map(e=><li key={e}>{e}</li>)}</ul></li>}
+                </ul>
               </div>
             </div>
-            <ul style={{height: (selectedVehicleDetails && detailsExtended) ? 
-              (((selectedVehicleDetails.equipment?.length||-1)+5
-                +(selectedVehicleDetails.registrationNumber ? 1 : 0))*1.15
-              )+"em":"0px", opacity: selectedVehicleDetails && detailsExtended?1:0}} className={styles.selectedVehicleDetails}>
-                <li>vehicle number: {selectedVehicleDetails?.id}</li>
-                {selectedVehicleDetails?.registrationNumber && <li>registration id: {selectedVehicleDetails?.registrationNumber}</li>}
-                <li>carrier: {selectedVehicleDetails?.carrier}</li>
-                <li>depot: {selectedVehicleDetails?.depot}</li>
-                <li>ticket machine: {selectedVehicleDetails?.ticketMachine ? 'available' : 'unavailable'}</li>
-                {selectedVehicleDetails?.equipment && <li>equipment: <ul>{selectedVehicleDetails.equipment.map(e=><li key={e}>{e}</li>)}</ul></li>}
-            </ul>
-          </div>
-          )}
+          </CSSTransition>
           {(vehicles.length && vehiclesWithBasicDetails.length) ?
           <div className={styles.vehiclesWithBasicDetails} ref={listRef}>
             <TransitionGroup>
@@ -249,7 +261,7 @@ const Home: NextPage = ({mapboxAccessToken}:InferGetStaticPropsType<typeof getSt
                     const currentInfo = vehicles.find(v=>v.id[0]==vehicle.id&&v.type==vehicle.type)
                     const selected = selectedVehicle?.type==vehicle.type&&selectedVehicle?.id==vehicle.id
                     if(!currentInfo) return;
-                    return (<CSSTransition timeout={250} classNames="vehicleItem" key={JSON.stringify(currentInfo)}>
+                    return (<CSSTransition timeout={250} classNames="vehicleItem" key={currentInfo.type+currentInfo.id}>
                       <VehicleBasicDetails selected={selected} id={selectVehicle} currentInfo={currentInfo} basicInfo={vehicle} />
                     </CSSTransition>)
                   }
