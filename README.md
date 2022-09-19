@@ -1,4 +1,4 @@
-# Warsaw ZTM Vehicle tracker
+# Warsaw ZTM Vehicle tracker 🚍🚊
 
 ## A web app which allows users to view live data for [ZTM](https://www.ztm.waw.pl/) vehicles
 
